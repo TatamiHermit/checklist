@@ -230,7 +230,7 @@ def check_owner():
     ownersize = tcdata['Test Case Owner'].nunique()
     ownerdata = tcdata['Test Case Owner'].dropna().drop_duplicates().values.tolist()
     # print(ownersize)
-    if ownersize >= 1:
+    if ownersize > 1:
         logger.error(f'10.用例存在多个Owner，如下{ownerdata}')
     elif ownersize == 1:
         logger.info(f'10.Owner列正确')
