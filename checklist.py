@@ -250,7 +250,7 @@ def check_prio():
     priodata = tcdata['Test Case Priority'].dropna().drop_duplicates().values.tolist()
     # print(priodata)
     # priodata = map(int, priodata)
-    if priosize >= 1:
+    if priosize > 1:
         logger.info(f'11.Test Case Priority存在多个优先级，如下{priodata}')
     elif priosize == 1:
         logger.info(f'11.Test Case Priority仅有1个优先级')
