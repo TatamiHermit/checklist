@@ -5,17 +5,16 @@ For infotainment test report data cleaning.
 
 Notice: 
 ==========
-1.appending libs:  
-pandas xlwings  
+# 1.appending libs: pandas xlwings xlrd  
 Terminal:  
 ```python  
 pip install pandas  
 pip install xlwings  
 pip install xlrd  
 ```  
-2.put xlsx and python file in the same directory  
-3.run checklist.py  
-  
+# 2.put xlsx and python file in the same directory  
+# 3.run checklist.py  
+---
 OR   
 Use pyinstaller package checklist.py to exe.  
 terminal:
