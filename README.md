@@ -9,7 +9,8 @@ Notice:
 pandas xlwings  
 Terminal:  
 pip install pandas  
-pip install xlwings  
+pip install xlwings
+pip install xlrd
 2.put xlsx and python file in the same directory  
 3.run checklist.py  
   
