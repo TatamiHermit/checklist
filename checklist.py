@@ -64,7 +64,7 @@ def read_data(bookname):
     allname = []
     tmpname = ['1.Cover_Changelog', 'TestCase']
     wb = app.books.open(bookname)
-    logger.info(f'0.开始检查表格:\t{bookname}')
+    logger.critical(f'0.开始检查表格:\t{bookname}')
     for sheet in wb.sheets:
         allname.append(sheet.name)
     if not set(tmpname).issubset(set(allname)):
@@ -75,7 +75,8 @@ def read_data(bookname):
     tc = wb.sheets['TestCase']
     tcdata = pd.read_excel(bookname,sheet_name='TestCase')
     # 去除空值
-    sumdata = tcdata[['Test Case Name', 'Result Overall State']].dropna()
+    sumdata1 = tcdata[['Test Case Name', 'Result Overall State', 'Result Details']]
+    sumdata = sumdata1.dropna(subset=['Test Case Name', 'Result Overall State'])
 
 
 def save_quit():
@@ -137,12 +138,18 @@ def add_sum():
     sumsheet = wb.sheets[sumtitle]
 
     # print(sumsheet)
-    sumsheet.range('A1').value = sumdata.values.tolist()
+    sumsheet.range('A1').value = 'Test Case Name'
+    sumsheet.range('B1').value = 'Result Overall State'
+    sumsheet.range('C1').value = 'Result Details'
+    sumsheet.range('D1').value = 'Defect No.'
+    sumsheet.range('A2').value = sumdata.values.tolist()
     pass_rate = sumdata.groupby(['Result Overall State']).size()
     # print(pass_rate)
     sumsheet.range('E1').value = pass_rate
+    sumsheet.range('F1').value = len(sumdata.index)
     sumsheet.autofit()
     logger.info(f'6.测试统计为:\t{sumtitle}')
+
 
 
 # 7    Test Case Name    检查Test Case Name列，不允许出现重名case。使用excel条件格式查重。
@@ -166,6 +173,11 @@ def check_duplicate():
         if len(name) != 14:
             logger.error(f'7.用例名称长度错误！！！！用例名为：\t{name}')
 
+    # 检查名称间隔符
+    for name in casename.values.tolist():
+        # print(name)
+        if name[6] != '_':
+            logger.error(f'7.用例间隔符不为_！！！！用例名为：\t{name}')
 
 # 8    Test Case Name    检查Test Case Name列，不允许出现case命名不符合要求的命名。
 def rename_title():
@@ -256,9 +268,9 @@ def check_prio():
         logger.info(f'11.Test Case Priority仅有1个优先级')
 
     if set(priodata).issubset([1, 2, 3]):
-        logger.info(f'11.Test Case Priority正确')
+        logger.info(f'11.Test Case Priority字符正确')
     else:
-        logger.error(f'11.Test Case Priority包含未指定的字符')
+        logger.error(f'11.Test Case Priority包含1/2/3之外的字符')
 
 
 # 12    Test Case Description    均填写了正确的描述，一般复制需求文字即可。如是流程图的描述，可以自行编写。
@@ -334,7 +346,13 @@ def check_step_state():
     logger.info(f'20.Result State空值数量为{nullcount}')
     if casecount != nullcount+1:
         logger.error(f'20.Result State包含非法空值！！！！')
-
+    statedata = tcdata['Result State'].dropna().drop_duplicates().values.tolist()
+    statedatalower = [x.lower() for x in statedata]
+    temdata = ['pass','passed','fail','failed','blocked']
+    if set(statedatalower).issubset(set(temdata)):
+        logger.info(f'20.Result State字符正确')
+    else:
+        logger.error(f'20.Result State包含{temdata}之外的字符(不区分大小写)')
 
 # 21    Result Overall State    Case result必填，使用：pass/passed   fail/failed  blocked ，只有全部step pass，才认为case pass
 def check_step_overall():
@@ -342,7 +360,13 @@ def check_step_overall():
     logger.info(f'21.Result Overall State数量为{postcount}')
     if postcount != casecount:
         logger.error(f'21.Result Overall State总数{postcount}和Case总数{casecount}不相等!')
-
+    overalldata = tcdata['Result Overall State'].dropna().drop_duplicates().values.tolist()
+    soveralldatalower = [x.lower() for x in overalldata]
+    temdata = ['pass','passed','fail','failed','blocked']
+    if set(soveralldatalower).issubset(set(temdata)):
+        logger.info(f'21.Result Overall State字符正确')
+    else:
+        logger.error(f'21.Result Overall State包含{temdata}之外的字符(不区分大小写)')
 
 # 22    Test Plan    填写RQM上已创建的Plan名称，只需要在第2行，填一次。
 def check_plan():
@@ -365,9 +389,10 @@ def check_planlink():
 
 
 if __name__ == '__main__':
-    print(get_xlsx())
+    print(f'当前目录下文件清单为{get_xlsx()}')
     init()
     for x in get_xlsx():
+        # print(f'#################开始检查{x}#######################')
         write_log(x)
         read_data(x)
         cv_name()
