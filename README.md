@@ -25,3 +25,16 @@ terminal:
 ```python
 pyinstaller -F $FileNamePath -i $FileIcoPath  
 ``` 
+
+
+ReleaseNote：  
+==========
+20190816  
+---
+1 modify sumlist  
+2 add step state check  
+3 add step overall state check  
+
+20190805  
+---
+1 initial release   
