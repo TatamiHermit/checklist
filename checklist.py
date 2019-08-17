@@ -6,6 +6,7 @@ import sys
 import time
 import logging
 import pandas as pd
+import pyprind
 
 
 # 获取xlsx文件名
@@ -30,10 +31,10 @@ def get_char(number):
 def write_log(wbname):
     global logger
     logger = logging.getLogger(wbname)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.ERROR)
 
     fh = logging.FileHandler(f'{wbname}{time.strftime("%Y-%m-%d-%H-%M-%S")}.log')
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.ERROR)
 
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -69,6 +70,9 @@ def read_data(bookname):
         allname.append(sheet.name)
     if not set(tmpname).issubset(set(allname)):
         logger.error(f'0.工作表名称错误:\t请使用{tmpname}')
+        wb.save()
+        wb.close()
+        app.quit()
         sys.exit()
 
     cv = wb.sheets[0]
@@ -178,6 +182,7 @@ def check_duplicate():
         # print(name)
         if name[6] != '_':
             logger.error(f'7.用例间隔符不为_！！！！用例名为：\t{name}')
+
 
 # 8    Test Case Name    检查Test Case Name列，不允许出现case命名不符合要求的命名。
 def rename_title():
@@ -333,6 +338,7 @@ def check_step_result():
     if casecount != nullcount+1:
         logger.error(f'18.Step Expected Result包含非法空值！！！！')
 
+
 # 19    Result Details    非OK项目，必须填写detail信息，NG项目保留视频、截图信息
 # def check_step_detail():
 #     postcount = tcdata['Test Case Postcondition'].dropna().count()
@@ -353,6 +359,7 @@ def check_step_state():
         logger.info(f'20.Result State字符正确')
     else:
         logger.error(f'20.Result State包含{temdata}之外的字符(不区分大小写)')
+
 
 # 21    Result Overall State    Case result必填，使用：pass/passed   fail/failed  blocked ，只有全部step pass，才认为case pass
 def check_step_overall():
@@ -388,6 +395,11 @@ def check_planlink():
 # 26    列数据数量    A=S
 
 
+def progressbar():
+    for progress in pyprind.prog_bar(range(30)):
+        time.sleep(1)
+
+
 if __name__ == '__main__':
     print(f'当前目录下文件清单为{get_xlsx()}')
     init()
@@ -418,3 +430,4 @@ if __name__ == '__main__':
         check_plan()
         check_planlink()
         save_quit()
+    progressbar()
