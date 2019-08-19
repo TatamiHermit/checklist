@@ -6,7 +6,6 @@ import sys
 import time
 import logging
 import pandas as pd
-import pyprind
 
 
 # 获取xlsx文件名
@@ -71,8 +70,11 @@ def read_data(bookname):
     if not set(tmpname).issubset(set(allname)):
         logger.error(f'0.工作表名称错误:\t请使用{tmpname}')
         wb.save()
+        time.sleep(1)
         wb.close()
+        time.sleep(1)
         app.quit()
+        time.sleep(1)
         sys.exit()
 
     cv = wb.sheets[0]
@@ -85,7 +87,9 @@ def read_data(bookname):
 
 def save_quit():
     wb.save()
+    time.sleep(1)
     wb.close()
+    time.sleep(1)
     app.quit()
 
 
@@ -375,10 +379,14 @@ def check_step_overall():
     else:
         logger.error(f'21.Result Overall State包含{temdata}之外的字符(不区分大小写)')
 
+
 # 22    Test Plan    填写RQM上已创建的Plan名称，只需要在第2行，填一次。
 def check_plan():
     title = tc.range('V2').value
-    logger.critical(f'23.Test Plan为:\t[{title}]')
+    logger.critical(f'22.Test Plan为:\t[{title}]')
+    titlelist = ['IVER', '60BOR', '80BOR','PPV','VTC','NS','S']
+    if title not in titlelist:
+        logger.error(f'22.Test Plan不属于{titlelist}')
 
 
 # 23    Test PlanURI    "填写RQM上已创建的Plan ID URI，只需要在第2行，填一次。
@@ -386,25 +394,14 @@ def check_plan():
 def check_planlink():
     title = tc.range('W2').value
     logger.critical(f'23.Test PlanURI为:\t[{title}]')
-
-
-# 24    列数据数量    A=B=C=D=E=F=I=J
-
-# 25    列数据数量    L=M=N=R
-
-# 26    列数据数量    A=S
-
-
-def progressbar():
-    for progress in pyprind.prog_bar(range(30)):
-        time.sleep(1)
-
+    if title[0:25] != 'urn:com.ibm.rqm:testplan:':
+        # print(title[0:24])
+        logger.error(f'23.Test PlanURI前缀错误，不为urn:com.ibm.rqm:testplan:')
 
 if __name__ == '__main__':
     print(f'当前目录下文件清单为{get_xlsx()}')
     init()
     for x in get_xlsx():
-        # print(f'#################开始检查{x}#######################')
         write_log(x)
         read_data(x)
         cv_name()
@@ -430,4 +427,4 @@ if __name__ == '__main__':
         check_plan()
         check_planlink()
         save_quit()
-    progressbar()
+    time.sleep(10)
