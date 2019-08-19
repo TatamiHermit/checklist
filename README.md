@@ -29,6 +29,10 @@ pyinstaller -F $FileNamePath -i $FileIcoPath
 
 ReleaseNote：  
 ==========
+20190819
+---
+fix bug name_check kill excel progress  
+
 20190816  
 ---
 1 modify sumlist  
