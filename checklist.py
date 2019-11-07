@@ -384,7 +384,7 @@ def check_step_overall():
 def check_plan():
     title = tc.range('V2').value
     logger.critical(f'22.Test Plan为:\t[{title}]')
-    titlelist = ['IVER', '60BOR', '80BOR','PPV','VTC','NS','S']
+    titlelist = ['IVER', '60BOR', '80BOR','PPV','VTC','NS','S','20.5PPV','20.5NS','20.5S']
     if title not in titlelist:
         logger.error(f'22.Test Plan不属于{titlelist}')
 
