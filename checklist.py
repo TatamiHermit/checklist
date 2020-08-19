@@ -81,8 +81,8 @@ def read_data(bookname):
     tc = wb.sheets['TestCase']
     tcdata = pd.read_excel(bookname,sheet_name='TestCase')
     # 去除空值
-    sumdata1 = tcdata[['Test Case Name', 'Result Overall State', 'Result Details']]
-    sumdata = sumdata1.dropna(subset=['Test Case Name', 'Result Overall State'])
+    sumdata1 = tcdata[['Test Case Name', 'Test Case Description', 'Result Overall State', 'Result Details']]
+    sumdata = sumdata1.dropna(subset=['Test Case Name', 'Test Case Description', 'Result Overall State'])
 
 
 def save_quit():
@@ -147,14 +147,16 @@ def add_sum():
 
     # print(sumsheet)
     sumsheet.range('A1').value = 'Test Case Name'
-    sumsheet.range('B1').value = 'Result Overall State'
-    sumsheet.range('C1').value = 'Result Details'
-    sumsheet.range('D1').value = 'Defect No.'
+    sumsheet.range('B1').value = 'Test Case Description'
+    sumsheet.range('C1').value = 'Result Overall State'
+    sumsheet.range('D1').value = 'Result Details'
+    sumsheet.range('E1').value = 'Defect No.'
+    # print(sumdata.values)
     sumsheet.range('A2').value = sumdata.values.tolist()
     pass_rate = sumdata.groupby(['Result Overall State']).size()
     # print(pass_rate)
-    sumsheet.range('E1').value = pass_rate
-    sumsheet.range('F1').value = len(sumdata.index)
+    sumsheet.range('F1').value = pass_rate
+    sumsheet.range('G1').value = len(sumdata.index)
     sumsheet.autofit()
     logger.info(f'6.测试统计为:\t{sumtitle}')
 
@@ -384,7 +386,7 @@ def check_step_overall():
 def check_plan():
     title = tc.range('V2').value
     logger.critical(f'22.Test Plan为:\t[{title}]')
-    titlelist = ['IVER', '60BOR', '80BOR','PPV','VTC','NS','S','20.5PPV','20.5NS','20.5S']
+    titlelist = ['IVB','IVER', '60BOR', '80BOR','PPV','VTC','NS','S','20.5PPV','20.5NS','20.5S']
     if title not in titlelist:
         logger.error(f'22.Test Plan不属于{titlelist}')
 
