@@ -29,6 +29,10 @@ pyinstaller -F $FileNamePath -i $FileIcoPath
 
 ReleaseNote：  
 ==========
+20190914
+---
+update to VCS version  
+
 20190819
 ---
 fix bug name_check kill excel progress  
