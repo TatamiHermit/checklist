@@ -81,8 +81,8 @@ def read_data(bookname):
     tc = wb.sheets['TestCase']
     tcdata = pd.read_excel(bookname,sheet_name='TestCase')
     # 去除空值
-    sumdata1 = tcdata[['Test Case Name', 'Test Case Description', 'Result Overall State', 'Result Details']]
-    sumdata = sumdata1.dropna(subset=['Test Case Name', 'Test Case Description', 'Result Overall State'])
+    sumdata1 = tcdata[['Test Case Name', 'Test Case Description', 'Test Case RequirementID','Result Overall State', 'Result Details']]
+    sumdata = sumdata1.dropna(subset=['Test Case Name', 'Test Case Description', 'Test Case RequirementID', 'Result Overall State'])
 
 
 def save_quit():
@@ -137,10 +137,10 @@ def cv_ref():
 # 6    Issue List页面    NOK的项目必须列出，DefectID可以先不填
 def add_sum():
     # 去旧加新summary列表
-    for sheet in wb.sheets:
-        if 'Test Summary' in sheet.name:
-            # print(sheet.name)
-            sheet.delete()
+    # for sheet in wb.sheets:
+    #     if 'Test Summary' in sheet.name:
+    #         # print(sheet.name)
+    #         sheet.delete()
     sumtitle = f'Test Summary{time.strftime("%Y%m%d_%H%M%S")}'
     wb.sheets.add(sumtitle, after='TestCase')
     sumsheet = wb.sheets[sumtitle]
@@ -148,15 +148,16 @@ def add_sum():
     # print(sumsheet)
     sumsheet.range('A1').value = 'Test Case Name'
     sumsheet.range('B1').value = 'Test Case Description'
-    sumsheet.range('C1').value = 'Result Overall State'
-    sumsheet.range('D1').value = 'Result Details'
-    sumsheet.range('E1').value = 'Defect No.'
+    sumsheet.range('C1').value = 'DNG ID'
+    sumsheet.range('D1').value = 'Result Overall State'
+    sumsheet.range('E1').value = 'Result Details'
+    sumsheet.range('F1').value = 'Defect No.'
     # print(sumdata.values)
     sumsheet.range('A2').value = sumdata.values.tolist()
     pass_rate = sumdata.groupby(['Result Overall State']).size()
     # print(pass_rate)
-    sumsheet.range('F1').value = pass_rate
-    sumsheet.range('G1').value = len(sumdata.index)
+    sumsheet.range('G1').value = pass_rate
+    sumsheet.range('H1').value = len(sumdata.index)
     sumsheet.autofit()
     logger.info(f'6.测试统计为:\t{sumtitle}')
 
@@ -196,7 +197,7 @@ def rename_title():
     tem_col=['Test Case Name', 'Model', 'Test Case Owner',
              'Test Case Priority', 'Test Case Description',
              'Test Case Functions', 'Test Case RequirementID',
-             'Test Case RequirementURI', 'Test Case Precondition',
+             'Test Case UE-ID', 'Test Case Precondition',
              'Test Case Postcondition', 'Test Case Attachment', 'Step No.',
              'Step Action', 'Step Expected Result', 'Step Comment', 'Step Attachment',
              'Result Details', 'Result State', 'Result Overall State', 'Execution Start time',
@@ -429,4 +430,4 @@ if __name__ == '__main__':
         check_plan()
         check_planlink()
         save_quit()
-    time.sleep(10)
+    time.sleep(5)
