@@ -1,5 +1,23 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+"""
+20201109 hhw
+更新add_sum,添加了通过率，失败率等
+
+20190914 lizhao
+update to VCS version
+
+20190819 lizhao
+fix bug name_check kill excel progress
+
+20190816 lizhao
+1 modify sumlist
+2 add step state check
+3 add step overall state check
+
+20190805 lizhao
+1 initial release
+"""
 import xlwings as xw
 import os
 import sys
@@ -7,13 +25,12 @@ import time
 import logging
 import pandas as pd
 
-
 # 获取xlsx文件名
 def get_xlsx():
     a = []
     path = os.getcwd()
     for x in os.listdir(path):
-        if x.endswith('xlsx') and not x.startswith('~$'):
+        if x.endswith('xlsx') and not x.startswith('~$') and not x.endswith('Release_Notes.xlsx'):
             a.append(x)
     return a
 
@@ -93,6 +110,87 @@ def save_quit():
     app.quit()
 
 
+# 检查空值显示行号
+def check_none(column, column_name):
+    # print(column , '开始')
+    rows_with_test_nane = []
+    rows_with_step = []
+    rows_difference = []
+    for index_name, row_name in tcdata['Test Case Name'].items():
+        if not pd.isna(row_name):
+            rows_with_test_nane.append(index_name+1)
+    for index_no, row in tcdata[column_name].items():
+        if pd.isna(row):
+            rows_with_step.append(index_no+2)
+            rows_difference = set(rows_with_step).difference(set(rows_with_test_nane))
+    if rows_difference is not None:
+        # print(rows_difference, '输出')
+        logger.error(f'首先检查TestCaseName是否为空!!!!如果CaseName存在的场合，请看左边->>>>> 项目 #{column_name}#: {column}列:的第{rows_difference}->该行有可能存在问题快去检查吧！')
+    time.sleep(1)
+
+
+# 检查总数不一样显示行号
+def check_count(column, column_name):
+    rows_with_nane = []
+    rows_with_nane1 = []
+    rows_with_step = []
+    rows_with_step1 = []
+    rows_difference = []
+    rows_difference1 = []
+    for index_name, row_name in tcdata['Test Case Name'].items():
+        if not pd.isna(row_name):
+            rows_with_nane.append(index_name+2)
+        else:
+            rows_with_nane1.append(index_name + 2)
+    for index_no, row in tcdata[column_name].items():
+        if not pd.isna(row):
+            rows_with_step.append(index_no+2)
+            rows_difference = set(rows_with_step).difference(set(rows_with_nane))
+        else:
+            rows_with_step1.append(index_no+2)
+            rows_difference1 = set(rows_with_step1).difference(set(rows_with_nane1))
+    if rows_difference:
+        # print(column, '列:', rows_difference, '->去检查吧！')
+        logger.error(f'首先检查TestCaseName是否为空!!!!如果CaseName存在的场合，请看左边->>>>> 项目 #{column_name}#{column}列:的第{rows_difference}->去检查吧.！')
+    elif rows_difference1:
+        logger.error(f'首先检查TestCaseName是否为空!!!!如果CaseName存在的场合，请看左边->>>>> #{column_name}#{column}列:的第{rows_difference1}->去检查吧！')
+    time.sleep(1)
+
+
+# 检查结果
+def check_result(column, column_name):
+    # print('开始')
+    rows_nane = []
+    illegality_row = []
+    illegality_Set = []
+    temdata = ['pass','passed','fail','failed','blocked']
+    for index_name, row_name in tcdata['Test Case Name'].items():
+        if not pd.isna(row_name):
+            rows_nane.append(index_name+2)
+    for illegality, row in tcdata[column_name].items():
+        # print(row)
+        rowLower = [s.lower() for s in [row] if isinstance(s, str)]
+        # print(rowLower)
+        if not set(rowLower).issubset(set(temdata)):
+            illegality_row.append(illegality+2)
+            # print(illegality_row)
+    if illegality_row is not None:
+        # print('列：', column, illegality_row, '字符不正确')
+        logger.error(f'首先检查TestCaseName是否为空!!!!如果CaseName存在的场合，请看左边->>>>> 项目 #{column_name}#{column}列:的第{illegality_row}->字符不正确去检查吧！')
+    time.sleep(1)
+
+
+# 给单元格上色
+def style_color(df):
+    """
+
+    :param df: pd.DataFrame
+    :param colors: 字典 内容是 {标题:颜色}
+    :return:
+    """
+    return df.style.apply(0, colors='#00EEEE')
+
+
 # 0 check cover_name
 def cv_name():
     if cv.name == '1.Cover_Changelog':
@@ -135,32 +233,44 @@ def cv_ref():
 
 
 # 6    Issue List页面    NOK的项目必须列出，DefectID可以先不填
-def add_sum():
+def add_sum(wb_name):
     # 去旧加新summary列表
-    # for sheet in wb.sheets:
-    #     if 'Test Summary' in sheet.name:
-    #         # print(sheet.name)
-    #         sheet.delete()
+    for sheet in wb.sheets:
+        if 'Test Summary' in sheet.name:
+            # print(sheet.name)
+            sheet.delete()
+
+    #wgy:增加一个参数wb_name
+    md_name = wb_name.split('.')[0]
+    # print(md_name)
     sumtitle = f'Test Summary{time.strftime("%Y%m%d_%H%M%S")}'
     wb.sheets.add(sumtitle, after='TestCase')
     sumsheet = wb.sheets[sumtitle]
+    #模块名称放在第一列
+    sumsheet.range('A1').value = 'Module Name'
+    sumsheet.range('A2').value = md_name
+    sumsheet.range('B1').value = 'Test Case Name'
+    sumsheet.range('C1').value = 'Test Case Description'
+    sumsheet.range('D1').value = 'DNG ID'
+    sumsheet.range('E1').value = 'Result Overall State'
+    sumsheet.range('F1').value = 'Result Details'
 
-    # print(sumsheet)
-    sumsheet.range('A1').value = 'Test Case Name'
-    sumsheet.range('B1').value = 'Test Case Description'
-    sumsheet.range('C1').value = 'DNG ID'
-    sumsheet.range('D1').value = 'Result Overall State'
-    sumsheet.range('E1').value = 'Result Details'
-    sumsheet.range('F1').value = 'Defect No.'
-    # print(sumdata.values)
-    sumsheet.range('A2').value = sumdata.values.tolist()
-    pass_rate = sumdata.groupby(['Result Overall State']).size()
+
+    sumsheet.range('B2').value = sumdata.values.tolist()
+    rate_1 = sumdata.groupby(['Result Overall State']).size()
+    # print(rate_1)
+    rate_2 = pd.DataFrame(rate_1).reset_index()
+    rate_2.set_axis(['State', 'Subtotal'], axis='columns', inplace=True)
+    pass_rate = rate_2[rate_2['State'].isin(['blocked', 'passed', 'failed'])].reset_index(drop=True)
+    # print(rate_2)
+    rate_2['Percentage'] = rate_2['Subtotal']/rate_2['Subtotal'].sum()
+    pass_rate['Percentage'] = pass_rate['Subtotal']/pass_rate['Subtotal'].sum()
+    # print(rate_2)
     # print(pass_rate)
-    sumsheet.range('G1').value = pass_rate
-    sumsheet.range('H1').value = len(sumdata.index)
+    sumsheet.range('H1').value = pass_rate
+    sumsheet.range('I6').value = len(sumdata.index)
     sumsheet.autofit()
     logger.info(f'6.测试统计为:\t{sumtitle}')
-
 
 
 # 7    Test Case Name    检查Test Case Name列，不允许出现重名case。使用excel条件格式查重。
@@ -208,21 +318,23 @@ def rename_title():
         if tc_col[i] != tem_col[i]:
             logger.error(f'8.第{get_char(i)}列名错误！！！！模板为{tem_col[i]}，实际为{tc_col[i]}')
         else:
-
             logger.info(f'8.第{get_char(i)}列名正确')
 
 
 # 9    Model    检查Model列，不允许出现空的换行符，逗号等符号。
 def check_model():
     global modelcount
+    model_with_space = []
+    model_with_line_character = []
     modelcount = tcdata['Model'].dropna().count()
     logger.info(f'9.Model总数为{casecount}!')
     if modelcount != casecount:
         logger.error(f'9.Model总数{modelcount}和Case总数{casecount}不相等!')
+        check_count('B', 'Model')
     elif modelcount == casecount:
         # 判断存在空格
         modeldata = tcdata[['Model']].dropna()
-        # print(modeldata)
+        # print(modeldata)：
         a = modeldata[modeldata['Model'].str.contains(' ')]
         # print(a)
         b = modeldata[modeldata['Model'].str.endswith('\n')]
@@ -230,6 +342,7 @@ def check_model():
             for index in a.index:
                 name = tcdata.at[index, 'Test Case Name']
                 logger.error(f'9.用例{name}的Model包含空格！！！！')
+                model_with_space.append(index + 2)
         else:
             logger.info(f'9.Model正确：不含空格！')
 
@@ -238,9 +351,13 @@ def check_model():
             for index in b.index:
                 name = tcdata.at[index, 'Test Case Name']
                 logger.error(f'9.用例{name}的Model尾部有换行符！！！！')
+                model_with_line_character.append(index + 2)
         else:
             logger.info(f'9.Model正确：尾部不含换行符！')
-
+    if model_with_space:
+        print('B列：', model_with_space, '有空格快去check')
+    if model_with_line_character:
+        print('B列：', model_with_line_character, '有换行符快去check')
 
 # 10    Test Case Owner    均分配了正确的owner
 def check_owner():
@@ -249,6 +366,7 @@ def check_owner():
     logger.info(f'10.Test Case Owner总数为{ownercount}!')
     if ownercount != casecount:
         logger.error(f'10.Test Case Owner总数{ownercount}和Case总数{casecount}不相等!')
+        check_count('C', 'Test Case Owner')
 
     #检查owner是否存在多个值
     ownersize = tcdata['Test Case Owner'].nunique()
@@ -267,6 +385,7 @@ def check_prio():
     logger.info(f'11.Test Case Priority总数为{priocount}!')
     if priocount != casecount:
         logger.error(f'11.Test Case Priority总数{priocount}和Case总数{casecount}不相等!')
+        check_count('D', 'Test Case Priority')
 
     # 检查prio是否存在多个值
     priosize = tcdata['Test Case Priority'].nunique()
@@ -291,6 +410,7 @@ def check_des():
     logger.info(f'12.Test Case Description数量为{descount}')
     if descount != casecount:
         logger.error(f'12.Test Case Description总数{descount}和Case总数{casecount}不相等!!!')
+        check_count('E', 'Test Case Description')
 
 
 # 13    Test Case Functions    填写function归属，仅填写二级功能即可。如HVAC_Vent，只需要填Vent
@@ -299,6 +419,7 @@ def check_fun():
     logger.info(f'13.Test Case Functions数量为{fuccount}')
     if fuccount != casecount:
         logger.error(f'13.Test Case Functions总数{fuccount}和Case总数{casecount}不相等!!!')
+        check_count('F', 'Test Case Functions')
 
 
 # 14    Test Case Precondition    必须按照要求填写，包含关键标定、设备清单、设备状态、UI初始画面等。
@@ -307,6 +428,7 @@ def check_pre():
     logger.info(f'14.Test Case Precondition数量为{precount}')
     if precount != casecount:
         logger.error(f'14.Test Case Precondition总数{precount}和Case总数{casecount}不相等!!!')
+        check_count('I', 'Test Case Precondition')
 
 
 # 15    Test Case Postcondition    必须按照要求填写，包含关键标定、设备清单、设备状态、UI初始画面等。
@@ -315,6 +437,7 @@ def check_post():
     logger.info(f'15.Test Case Postcondition数量为{postcount}')
     if postcount != casecount:
         logger.error(f'15.Test Case Postcondition总数{postcount}和Case总数{casecount}不相等!')
+        check_count('J', 'Test Case Postcondition')
 
 
 # 16    Step No.    必填，并且必须有值、可以是1,2,3  或者step 1，step 2，step 3
@@ -326,6 +449,8 @@ def check_step_no():
     logger.info(f'16.Step No.空值数量为{nullcount}')
     if casecount != nullcount+1:
         logger.error(f'16.Step No.包含非法空值！！！！')
+        check_none('L', 'Step No.')
+
 
 
 # 17    Step Action    必填
@@ -335,6 +460,7 @@ def check_step_action():
     logger.info(f'17.Step Action空值数量为{nullcount}')
     if casecount != nullcount+1:
         logger.error(f'17.Step Action包含非法空值！！！！')
+        check_none('F', 'Step Action')
 
 
 # 18    Step Expected Result    必填
@@ -344,6 +470,7 @@ def check_step_result():
     logger.info(f'18.Step Expected Result空值数量为{nullcount}')
     if casecount != nullcount+1:
         logger.error(f'18.Step Expected Result包含非法空值！！！！')
+        check_none('M', 'Step Action')
 
 
 # 19    Result Details    非OK项目，必须填写detail信息，NG项目保留视频、截图信息
@@ -359,14 +486,15 @@ def check_step_state():
     logger.info(f'20.Result State空值数量为{nullcount}')
     if casecount != nullcount+1:
         logger.error(f'20.Result State包含非法空值！！！！')
+        check_none('R', 'Result State')
     statedata = tcdata['Result State'].dropna().drop_duplicates().values.tolist()
     statedatalower = [x.lower() for x in statedata]
-    temdata = ['pass','passed','fail','failed','blocked']
+    temdata = ['pass','passed','fail','failed','blocked','deferred']
     if set(statedatalower).issubset(set(temdata)):
         logger.info(f'20.Result State字符正确')
     else:
         logger.error(f'20.Result State包含{temdata}之外的字符(不区分大小写)')
-
+        check_result('R', 'Result State')
 
 # 21    Result Overall State    Case result必填，使用：pass/passed   fail/failed  blocked ，只有全部step pass，才认为case pass
 def check_step_overall():
@@ -374,13 +502,15 @@ def check_step_overall():
     logger.info(f'21.Result Overall State数量为{postcount}')
     if postcount != casecount:
         logger.error(f'21.Result Overall State总数{postcount}和Case总数{casecount}不相等!')
+        check_count('S', 'Result Overall State')
     overalldata = tcdata['Result Overall State'].dropna().drop_duplicates().values.tolist()
     soveralldatalower = [x.lower() for x in overalldata]
-    temdata = ['pass','passed','fail','failed','blocked']
+    temdata = ['pass','passed','fail', 'failed', 'blocked', 'deferred']
     if set(soveralldatalower).issubset(set(temdata)):
         logger.info(f'21.Result Overall State字符正确')
     else:
         logger.error(f'21.Result Overall State包含{temdata}之外的字符(不区分大小写)')
+        check_result('S', 'Result Overall State')
 
 
 # 22    Test Plan    填写RQM上已创建的Plan名称，只需要在第2行，填一次。
@@ -388,8 +518,8 @@ def check_plan():
     title = tc.range('V2').value
     logger.critical(f'22.Test Plan为:\t[{title}]')
     titlelist = ['IVB','IVER', '60BOR', '80BOR','PPV','VTC','NS','S','20.5PPV','20.5NS','20.5S']
-    if title not in titlelist:
-        logger.error(f'22.Test Plan不属于{titlelist}')
+    # if title not in titlelist:
+    #     #     logger.error(f'22.Test Plan不属于{titlelist}')
 
 
 # 23    Test PlanURI    "填写RQM上已创建的Plan ID URI，只需要在第2行，填一次。
@@ -412,7 +542,7 @@ if __name__ == '__main__':
         cv_sw_version()
         cv_title()
         cv_ref()
-        add_sum()
+        add_sum(x)
         check_duplicate()
         rename_title()
         check_model()
@@ -431,3 +561,4 @@ if __name__ == '__main__':
         check_planlink()
         save_quit()
     time.sleep(5)
+    app.quit()
